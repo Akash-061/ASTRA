@@ -11,8 +11,7 @@
 
 ## 📖 About
 
-ASTRA is a long-term personal AI assistant project that I'm building from scratch to learn software engineering, Python, automation, and artificial intelligence.
-
+ASTRA is a long-term software engineering project to build a voice-first personal AI operating system that understands natural language, remembers user preferences, automates tasks, and seamlessly integrates across Windows and Android. The goal is to create an intelligent assistant that evolves from a command-line tool into a trusted digital companion built completely from scratch.
 The goal is to create an assistant that can:
 
 - 💻 Control my Windows PC
