@@ -9,7 +9,6 @@ console = Console()
 
 APPS = discover_apps()
 
-print(APPS.get("google chrome"))
 
 
 def execute_command(command: str) -> bool:
@@ -17,7 +16,7 @@ def execute_command(command: str) -> bool:
     Returns True if ASTRA should continue running.
     Returns False if ASTRA should exit.
     """
-
+    
     command = command.strip().lower()
 
     if command == "exit":
@@ -53,16 +52,44 @@ exit
 
         app = command.replace("open ", "").lower()
 
-        if app in APPS:
+        matches = []
 
-            shortcut = APPS[app]
+    # Search for matching applications
+    for app_name in APPS:
 
-            os.startfile(str(shortcut))
-            
-            console.print(f"[green]Opening {app.title()}...[/green]")
+        if app in app_name:
+            matches.append(app_name)
 
-        else:
+    # No matches
+    if len(matches) == 0:
 
-            console.print(f"[red]Unknown application:[/red] {app}")
+        console.print(f"[red]Unknown application:[/red] {app}")
 
-    return True
+    # Exactly one match
+    elif len(matches) == 1:
+
+        selected_app = matches[0]
+
+        shortcut = APPS[selected_app]
+
+        os.startfile(str(shortcut))
+
+        console.print(f"[green]Opening {selected_app.title()}...[/green]")
+
+    # Multiple matches
+    else:
+
+        console.print("[yellow]I found multiple applications:[/yellow]\n")
+
+        for index, match in enumerate(matches, start=1):
+            console.print(f"{index}. {match.title()}")
+
+        choice = int(input("\nChoose an application: "))
+
+        selected_app = matches[choice - 1]
+
+        shortcut = APPS[selected_app]
+
+        os.startfile(str(shortcut))
+
+        console.print(f"[green]Opening {selected_app.title()}...[/green]")
