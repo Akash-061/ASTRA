@@ -1,12 +1,16 @@
-import subprocess
+import os
 
 from rich.console import Console
+
 from app.utils.system import get_system_info
-from app.utils.config import load_apps
+from app.utils.app_discovery import discover_apps
 
 console = Console()
 
-APPS = load_apps()
+APPS = discover_apps()
+
+print(APPS.get("google chrome"))
+
 
 def execute_command(command: str) -> bool:
     """
@@ -47,21 +51,18 @@ exit
 
     elif command.startswith("open "):
 
-        words = command.split()
+        app = command.replace("open ", "").lower()
 
-        if len(words) < 2:
-            console.print("[red]Usage:[/red] open <application>")
-            return True
+        if app in APPS:
 
-        app = words[1]
+            shortcut = APPS[app]
 
+            os.startfile(str(shortcut))
+            
+            console.print(f"[green]Opening {app.title()}...[/green]")
 
-    if app in APPS:
+        else:
 
-        subprocess.Popen(APPS[app])
+            console.print(f"[red]Unknown application:[/red] {app}")
 
-        console.print(f"[green]Opening {app.title()}...[/green]")
-
-    else:
-
-        console.print(f"[red]Unknown application:[/red] {app}")
+    return True
