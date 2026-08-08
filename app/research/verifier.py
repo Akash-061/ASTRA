@@ -1,42 +1,43 @@
 from app.research.models import Claim
+from app.research.matcher import group_similar_claims
 from app.research.source import get_domain
 
 
-def verify_claims(claims: list[Claim]) -> list[Claim]:
+def verify_claims(
+    claims: list[Claim],
+    similarity_threshold: float = 0.35,
+) -> list[Claim]:
 
-    groups = {}
+    groups = group_similar_claims(
+        claims,
+        threshold=similarity_threshold,
+    )
 
-    for claim in claims:
+    verified_claims = []
 
-        normalized = claim.statement.strip().lower()
+    for group in groups:
 
-        if not normalized:
+        if not group:
             continue
 
-        if normalized not in groups:
-            groups[normalized] = {
-                "statement": claim.statement,
-                "sources": [],
-                "domains": set(),
-            }
+        statement = group[0].statement
 
-        for source in claim.sources:
+        sources = []
+        domains = set()
 
-            if source not in groups[normalized]["sources"]:
+        for claim in group:
 
-                groups[normalized]["sources"].append(source)
+            for source in claim.sources:
+
+                if source not in sources:
+                    sources.append(source)
 
                 domain = get_domain(source)
 
                 if domain:
-                    groups[normalized]["domains"].add(domain)
+                    domains.add(domain)
 
-    verified_claims = []
-
-    for data in groups.values():
-
-        source_count = len(data["sources"])
-        domain_count = len(data["domains"])
+        domain_count = len(domains)
 
         if domain_count == 1:
             confidence = 0.40
@@ -52,8 +53,8 @@ def verify_claims(claims: list[Claim]) -> list[Claim]:
 
         verified_claims.append(
             Claim(
-                statement=data["statement"],
-                sources=data["sources"],
+                statement=statement,
+                sources=sources,
                 confidence=confidence,
             )
         )
