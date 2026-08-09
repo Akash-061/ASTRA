@@ -1,4 +1,4 @@
-from app.research.models import Claim
+from app.research.models import Claim, EvidenceGroup
 from app.research.matcher import group_similar_claims
 from app.research.source import get_domain
 
@@ -6,21 +6,21 @@ from app.research.source import get_domain
 def verify_claims(
     claims: list[Claim],
     similarity_threshold: float = 0.35,
-) -> list[Claim]:
+) -> list[EvidenceGroup]:
 
     groups = group_similar_claims(
         claims,
         threshold=similarity_threshold,
     )
 
-    verified_claims = []
+    evidence_groups = []
 
     for group in groups:
 
         if not group:
             continue
 
-        statement = group[0].statement
+        representative_claim = group[0].statement
 
         sources = []
         domains = set()
@@ -51,12 +51,14 @@ def verify_claims(
         else:
             confidence = 0.0
 
-        verified_claims.append(
-            Claim(
-                statement=statement,
+        evidence_groups.append(
+            EvidenceGroup(
+                representative_claim=representative_claim,
+                claims=group,
                 sources=sources,
+                domains=sorted(domains),
                 confidence=confidence,
             )
         )
 
-    return verified_claims
+    return evidence_groups

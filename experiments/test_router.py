@@ -1,9 +1,30 @@
-from app.core.router import route
+from app.core.router import resolve_capability
 
 
-while True:
+assert (
+    resolve_capability("open")
+    is not None
+)
 
-    command = input("ASTRA > ")
+assert (
+    resolve_capability("system")
+    is not None
+)
 
-    if not route(command):
-        break
+assert (
+    resolve_capability("research")
+    is not None
+)
+
+assert (
+    resolve_capability("help")
+    is not None
+)
+
+assert (
+    resolve_capability("unknown")
+    is None
+)
+
+
+print("ROUTER PASSED")

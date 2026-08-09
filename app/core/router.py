@@ -1,32 +1,26 @@
-from app.modules.research import research
-from app.core.intent import detect_intent
+from typing import Callable
+
 from app.modules.apps import open_application
-from app.modules.system import handle_system_command
 from app.modules.help import show_help
+from app.modules.research import research
+from app.modules.system import handle_system_command
 
 
-def route(command: str):
+Capability = Callable
 
-    intent = detect_intent(command)
 
-    if intent == "open":
+CAPABILITIES: dict[str, Capability] = {
+    "open": open_application,
+    "system": handle_system_command,
+    "help": show_help,
+    "research": research,
+}
 
-        open_application(command)
 
-    elif intent == "system":
+def resolve_capability(
+    action_name: str,
+) -> Capability | None:
 
-        handle_system_command(command)
-    elif intent == "help":
-
-        show_help()
-    elif intent == "exit":
-
-        return False
-    elif intent == "research":
-
-        research(command)
-    else:
-
-        print(f"Unknown command: {command}")
-
-    return True
+    return CAPABILITIES.get(
+        action_name
+    )

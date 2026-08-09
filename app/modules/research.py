@@ -2,6 +2,7 @@ from rich.console import Console
 
 from app.research.search import search_web
 from app.research.analyzer import extract_claims
+from app.research.relevance import is_relevant
 from app.research.verifier import verify_claims
 
 
@@ -68,33 +69,81 @@ def research(command: str):
 
         return
 
-    # Step 3: Verify / aggregate claims
-    verified_claims = verify_claims(claims)
+    console.print(
+        f"[dim]Candidate claims: {len(claims)}[/dim]"
+    )
+
+    # Step 3: Filter claims by semantic relevance
+    relevant_claims = []
+
+    for claim in claims:
+
+        if is_relevant(
+            query,
+            claim,
+        ):
+            relevant_claims.append(claim)
+
+    if not relevant_claims:
+
+        console.print(
+            "[yellow]No relevant claims found.[/yellow]"
+        )
+
+        return
+
+    console.print(
+        f"[green]Relevant claims: "
+        f"{len(relevant_claims)}[/green]\n"
+    )
+
+    # Step 4: Verify and create evidence groups
+    evidence_groups = verify_claims(
+        relevant_claims
+    )
+
+    if not evidence_groups:
+
+        console.print(
+            "[yellow]No evidence groups found.[/yellow]"
+        )
+
+        return
 
     console.print(
         "[bold cyan]Research Evidence[/bold cyan]\n"
     )
 
-    for index, claim in enumerate(
-        verified_claims,
-        start=1
+    for index, group in enumerate(
+        evidence_groups,
+        start=1,
     ):
 
         console.print(
-            f"[bold]{index}. {claim.statement}[/bold]"
+            f"[bold]{index}. "
+            f"{group.representative_claim}[/bold]"
         )
 
         console.print(
             f"[yellow]Evidence confidence:[/yellow] "
-            f"{claim.confidence:.0%}"
+            f"{group.confidence:.0%}"
         )
 
         console.print(
-            f"[green]Independent sources:[/green] "
-            f"{len(claim.sources)}"
+            f"[green]Independent domains:[/green] "
+            f"{len(group.domains)}"
         )
 
-        for source in claim.sources:
+        console.print(
+            f"[green]Related claims:[/green] "
+            f"{len(group.claims)}"
+        )
+
+        console.print(
+            "[cyan]Sources:[/cyan]"
+        )
+
+        for source in group.sources:
 
             console.print(
                 f"  • {source}"

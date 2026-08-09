@@ -40,10 +40,10 @@ verified = verify_claims(
 )
 
 
-print(f"Verified groups: {len(verified)}")
+print(f"Evidence groups: {len(verified)}")
 
 
-for index, claim in enumerate(
+for index, group in enumerate(
     verified,
     start=1,
 ):
@@ -52,16 +52,29 @@ for index, claim in enumerate(
     print("-" * 40)
 
     print(
-        f"Statement: {claim.statement}"
+        f"Representative: "
+        f"{group.representative_claim}"
     )
 
     print(
-        f"Sources: {len(claim.sources)}"
+        f"Related claims: "
+        f"{len(group.claims)}"
     )
 
-    for source in claim.sources:
+    print(
+        f"Sources: "
+        f"{len(group.sources)}"
+    )
+
+    print(
+        f"Domains: "
+        f"{len(group.domains)}"
+    )
+
+    print(
+        f"Confidence: "
+        f"{group.confidence:.0%}"
+    )
+
+    for source in group.sources:
         print(f"  - {source}")
-
-    print(
-        f"Confidence: {claim.confidence:.0%}"
-    )
