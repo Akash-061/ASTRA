@@ -1,6 +1,7 @@
 import app.research.engine as engine
 
 from app.research.request import ResearchRequest
+
 from app.research.models import (
     SearchResult,
     Claim,
@@ -95,35 +96,30 @@ result = engine.run_research(
 
 
 # --------------------------------------------------
-# Assertions
+# Assertions — engine data
 # --------------------------------------------------
 
 assert result["success"] is True
-
 
 assert (
     result["data"]["query"]
     == "recent issues in Tokyo"
 )
 
-
 assert (
     result["data"]["sources"]
     == 1
 )
-
 
 assert (
     result["data"]["claims"]
     == 1
 )
 
-
 assert (
     result["data"]["relevant_claims"]
     == 1
 )
-
 
 assert (
     len(
@@ -134,43 +130,65 @@ assert (
 
 
 # --------------------------------------------------
-# Verify synthesized answer
+# Assertions — structured synthesis
 # --------------------------------------------------
 
+message = result["message"]
+
+
 assert (
-    "recent issues in Tokyo"
-    in result["message"]
+    'Research: "recent issues in Tokyo"'
+    in message
 )
 
+assert (
+    "Key Findings"
+    in message
+)
 
 assert (
     "Tokyo residents reported"
-    in result["message"]
+    in message
 )
-
 
 assert (
     "transportation disruptions"
-    in result["message"]
+    in message
 )
-
 
 assert (
-    "Confidence: 80%"
-    in result["message"]
+    "Confidence: High (80%)"
+    in message
 )
-
 
 assert (
-    "example.com"
-    in result["message"]
+    "Independent sources: 1"
+    in message
 )
 
+assert (
+    "Sources"
+    in message
+)
+
+assert (
+    "[1] https://example.com/tokyo"
+    in message
+)
+
+
+# --------------------------------------------------
+# Output
+# --------------------------------------------------
 
 print()
-print("RESEARCH ENGINE RESPONSE")
+print(
+    "RESEARCH ENGINE RESPONSE"
+)
 print("--------------------------------")
 print(result["message"])
 print("--------------------------------")
 print()
-print("RESEARCH ENGINE PASSED")
+print(
+    "RESEARCH ENGINE PASSED"
+)

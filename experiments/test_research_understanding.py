@@ -8,13 +8,13 @@ tests = [
         "research recent issues in Tokyo",
         "Tokyo",
         "recent",
-        "recent issues in Tokyo",
+        "issues",
     ),
     (
         "latest AI developments in Japan",
         "Japan",
         "latest",
-        "latest AI developments in Japan",
+        "AI developments",
     ),
     (
         "research Python security",

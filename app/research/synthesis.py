@@ -1,6 +1,22 @@
 from app.research.models import EvidenceGroup
 
 
+def confidence_label(
+    confidence: float,
+) -> str:
+
+    if confidence >= 0.75:
+        return "High"
+
+    if confidence >= 0.50:
+        return "Moderate"
+
+    if confidence >= 0.30:
+        return "Low"
+
+    return "Very Low"
+
+
 def synthesize_answer(
     query: str,
     evidence_groups: list[EvidenceGroup],
@@ -31,12 +47,29 @@ def synthesize_answer(
 
     lines = []
 
+    # --------------------------------------------------
+    # Header
+    # --------------------------------------------------
+
     lines.append(
-        f'Based on the available evidence for '
-        f'"{query}":'
+        f'Research: "{query}"'
     )
 
     lines.append("")
+
+    lines.append(
+        "Key Findings"
+    )
+
+    lines.append(
+        "------------"
+    )
+
+    lines.append("")
+
+    # --------------------------------------------------
+    # Findings
+    # --------------------------------------------------
 
     for index, group in enumerate(
         selected_groups,
@@ -48,22 +81,69 @@ def synthesize_answer(
             f"{group.representative_claim}"
         )
 
-        lines.append(
-            f"   Confidence: "
-            f"{group.confidence:.0%}"
+        label = confidence_label(
+            group.confidence
         )
 
-        if group.has_conflict:
+        lines.append(
+            f"   Confidence: "
+            f"{label} "
+            f"({group.confidence:.0%})"
+        )
+
+        lines.append(
+            f"   Independent sources: "
+            f"{len(group.domains)}"
+        )
+
+        lines.append(
+            f"   Supporting claims: "
+            f"{len(group.claims)}"
+        )
+
+        lines.append("")
+
+    # --------------------------------------------------
+    # Conflicting evidence
+    # --------------------------------------------------
+
+    conflicting_groups = [
+        group
+        for group in selected_groups
+        if group.has_conflict
+    ]
+
+    if conflicting_groups:
+
+        lines.append(
+            "Conflicting Evidence"
+        )
+
+        lines.append(
+            "--------------------"
+        )
+
+        lines.append("")
+
+        for index, group in enumerate(
+            conflicting_groups,
+            start=1,
+        ):
 
             lines.append(
-                "   ⚠️ Conflict detected: "
-                "sources disagree on this point."
+                f"{index}. "
+                f"{group.representative_claim}"
+            )
+
+            lines.append(
+                "   ⚠️ Sources disagree "
+                "on this point."
             )
 
             if group.conflicting_claims:
 
                 lines.append(
-                    "   Conflicting evidence:"
+                    "   Conflicting claims:"
                 )
 
                 for claim in (
@@ -71,31 +151,46 @@ def synthesize_answer(
                 ):
 
                     lines.append(
-                        f"   - {claim.statement}"
+                        f"   - "
+                        f"{claim.statement}"
                     )
 
-        if group.domains:
+            lines.append("")
 
-            lines.append(
-                "   Independent sources: "
-                + ", ".join(
-                    group.domains
-                )
+    # --------------------------------------------------
+    # Sources
+    # --------------------------------------------------
+
+    lines.append(
+        "Sources"
+    )
+
+    lines.append(
+        "-------"
+    )
+
+    lines.append("")
+
+    source_index = 1
+    seen_sources = set()
+
+    for group in selected_groups:
+
+        for source in group.sources:
+
+            if source in seen_sources:
+                continue
+
+            seen_sources.add(
+                source
             )
 
-        if group.sources:
-
             lines.append(
-                "   Sources:"
+                f"[{source_index}] "
+                f"{source}"
             )
 
-            for source in group.sources:
-
-                lines.append(
-                    f"   - {source}"
-                )
-
-        lines.append("")
+            source_index += 1
 
     return "\n".join(
         lines

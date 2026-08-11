@@ -18,6 +18,7 @@ claim_a = Claim(
     ],
 )
 
+
 claim_b = Claim(
     statement=(
         "Chennai airport operations "
@@ -69,27 +70,61 @@ print(answer)
 print()
 
 
+# Main structured-output checks.
+
 assert (
-    "Conflict detected"
+    "Research: \"Chennai airport status\""
     in answer
 )
 
 assert (
-    "sources disagree"
+    "Key Findings"
     in answer
 )
 
 assert (
-    claim_a.statement
+    "Conflicting Evidence"
     in answer
 )
 
 assert (
-    claim_b.statement
+    "Sources"
     in answer
 )
 
 
+# Conflict information must be visible.
+
+assert (
+    "Sources disagree"
+    in answer
+)
+
+assert (
+    "resumed normally"
+    in answer
+)
+
+assert (
+    "remain disrupted"
+    in answer
+)
+
+
+# Both sources must be preserved.
+
+assert (
+    "https://example.com/resumed"
+    in answer
+)
+
+assert (
+    "https://example.org/disrupted"
+    in answer
+)
+
+
+print()
 print(
     "CONFLICT SYNTHESIS PASSED"
 )
