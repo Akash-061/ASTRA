@@ -1,8 +1,17 @@
 from rich.console import Console
 
-from app.core.models import Action
-from app.research.adapter import action_to_research_request
-from app.research.engine import run_research
+from app.core.models import (
+    Action,
+    ExecutionResult,
+)
+
+from app.research.adapter import (
+    action_to_research_request,
+)
+
+from app.research.engine import (
+    run_research,
+)
 
 
 console = Console()
@@ -10,7 +19,7 @@ console = Console()
 
 def research(
     action: Action,
-):
+) -> ExecutionResult:
 
     request = action_to_research_request(
         action
@@ -31,7 +40,14 @@ def research(
             f"[yellow]{result['message']}[/yellow]"
         )
 
-        return result
+        return ExecutionResult(
+            success=False,
+            message=result["message"],
+            data=result.get(
+                "data",
+                {},
+            ),
+        )
 
     data = result.get(
         "data",
@@ -109,7 +125,11 @@ def research(
 
         console.print()
 
-    return result
+    return ExecutionResult(
+        success=True,
+        message=result["message"],
+        data=data,
+    )
 
 
 research.accepts_action = True

@@ -36,21 +36,36 @@ result = research_module.research(
 )
 
 
-assert result["success"] is True
+assert result.success is True
 
 assert (
-    result["data"]["query"]
+    result.message
+    == "Research completed."
+)
+
+assert (
+    result.data["query"]
     == "recent issues in Tokyo"
 )
 
 assert (
-    result["data"]["sources"]
+    result.data["sources"]
     == 3
 )
 
 assert (
-    result["data"]["relevant_claims"]
+    result.data["claims"]
+    == 5
+)
+
+assert (
+    result.data["relevant_claims"]
     == 3
+)
+
+assert (
+    result.data["evidence_groups"]
+    == []
 )
 
 

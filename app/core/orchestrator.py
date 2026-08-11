@@ -68,14 +68,33 @@ class Orchestrator:
                 success=False,
             )
 
+        # If any action fails, preserve every
+        # execution result in the response.
         for result in results:
 
             if not result.success:
 
-                return build_response(
+                response = build_response(
                     result
                 )
 
-        return build_response(
+                response.data["results"] = [
+                    item.model_dump()
+                    for item in results
+                ]
+
+                return response
+
+        # The last successful result remains
+        # the primary user-facing response.
+        response = build_response(
             results[-1]
         )
+
+        # Preserve all execution results.
+        response.data["results"] = [
+            item.model_dump()
+            for item in results
+        ]
+
+        return response

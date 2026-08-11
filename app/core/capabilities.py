@@ -53,7 +53,21 @@ class FunctionCapability(Capability):
 
                     result = self.function()
 
-            if isinstance(result, dict):
+            # If the capability already returned
+            # an ExecutionResult, preserve it exactly.
+            if isinstance(
+                result,
+                ExecutionResult,
+            ):
+
+                return result
+
+            # Convert dictionary results into the
+            # standard ExecutionResult contract.
+            if isinstance(
+                result,
+                dict,
+            ):
 
                 success = result.get(
                     "success",
@@ -91,6 +105,7 @@ class FunctionCapability(Capability):
                     data=data,
                 )
 
+            # Handle simple string/other return values.
             return ExecutionResult(
                 success=True,
                 message=str(result),

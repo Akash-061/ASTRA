@@ -1,4 +1,7 @@
-from app.core.models import AstraResponse, ExecutionResult
+from app.core.models import (
+    AstraResponse,
+    ExecutionResult,
+)
 
 
 def build_response(
@@ -10,6 +13,7 @@ def build_response(
         return AstraResponse(
             message=result.message,
             success=False,
+            data=result.data,
         )
 
     if result.message:
@@ -17,9 +21,11 @@ def build_response(
         return AstraResponse(
             message=result.message,
             success=True,
+            data=result.data,
         )
 
     return AstraResponse(
         message="Task completed successfully.",
         success=True,
+        data=result.data,
     )
