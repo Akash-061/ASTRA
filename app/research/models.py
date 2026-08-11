@@ -13,9 +13,10 @@ class SearchResult(BaseModel):
 class Claim(BaseModel):
 
     statement: str
-    sources: list[str] = Field(default_factory=list)
+    sources: list[str] = Field(
+        default_factory=list
+    )
 
-    # Information about where this claim came from.
     source_title: str = ""
     source_url: str = ""
 
@@ -25,9 +26,23 @@ class Claim(BaseModel):
 class EvidenceGroup(BaseModel):
 
     representative_claim: str
-    claims: list[Claim] = Field(default_factory=list)
 
-    sources: list[str] = Field(default_factory=list)
-    domains: list[str] = Field(default_factory=list)
+    claims: list[Claim] = Field(
+        default_factory=list
+    )
+
+    sources: list[str] = Field(
+        default_factory=list
+    )
+
+    domains: list[str] = Field(
+        default_factory=list
+    )
 
     confidence: float = 0.0
+
+    has_conflict: bool = False
+
+    conflicting_claims: list[Claim] = Field(
+        default_factory=list
+    )

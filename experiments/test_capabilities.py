@@ -1,31 +1,21 @@
 from app.core.capabilities import FunctionCapability
-from app.core.executor import Executor
 from app.core.models import Action
-from app.core.router import CAPABILITIES
 
 
-def fake_capability(command: str):
+def fake_function(command: str):
 
     return {
         "success": True,
         "message": "Fake capability executed.",
         "data": {
             "command": command,
-            "executed": True,
         },
     }
 
 
-original = CAPABILITIES.get("test")
-
-
-CAPABILITIES["test"] = FunctionCapability(
-    fake_capability
+capability = FunctionCapability(
+    fake_function
 )
-
-
-executor = Executor()
-
 
 action = Action(
     name="test",
@@ -34,8 +24,7 @@ action = Action(
     },
 )
 
-
-result = executor.execute(
+result = capability.execute(
     action
 )
 
@@ -52,21 +41,5 @@ assert (
     == "hello ASTRA"
 )
 
-assert (
-    result.data["executed"]
-    is True
-)
 
-
-CAPABILITIES.pop(
-    "test",
-    None,
-)
-
-
-if original is not None:
-
-    CAPABILITIES["test"] = original
-
-
-print("EXECUTOR PASSED")
+print("FUNCTION CAPABILITY PASSED")

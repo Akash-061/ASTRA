@@ -5,6 +5,7 @@ from app.core.models import (
     UserRequest,
 )
 from app.core.planner import create_plan
+from app.core.response import build_response
 
 
 class Orchestrator:
@@ -60,23 +61,21 @@ class Orchestrator:
 
             results.append(result)
 
-        failed = [
-            result
-            for result in results
-            if not result.success
-        ]
-
-        if failed:
+        if not results:
 
             return AstraResponse(
-                message=failed[0].message,
+                message="No action was executed.",
                 success=False,
             )
 
-        return AstraResponse(
-            message=(
-                f"Completed task: "
-                f"{plan.intent}"
-            ),
-            success=True,
+        for result in results:
+
+            if not result.success:
+
+                return build_response(
+                    result
+                )
+
+        return build_response(
+            results[-1]
         )

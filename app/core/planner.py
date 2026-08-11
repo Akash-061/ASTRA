@@ -1,23 +1,16 @@
-from app.core.intent import detect_intent
-from app.core.models import Action, TaskPlan
+from app.core.models import TaskPlan
+from app.core.understanding import understand_command
 
 
 def create_plan(
     command: str,
 ) -> TaskPlan:
 
-    intent = detect_intent(
+    action = understand_command(
         command
     )
 
-    action = Action(
-        name=intent,
-        parameters={
-            "command": command,
-        },
-    )
-
     return TaskPlan(
-        intent=intent,
+        intent=action.name,
         actions=[action],
     )

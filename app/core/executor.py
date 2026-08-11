@@ -23,34 +23,6 @@ class Executor:
                 ),
             )
 
-        command = action.parameters.get(
-            "command",
-            "",
+        return capability.execute(
+            action
         )
-
-        try:
-
-            result = capability(
-                command
-            )
-
-            return ExecutionResult(
-                success=True,
-                message=(
-                    f"Action '{action.name}' "
-                    f"executed successfully."
-                ),
-                data={
-                    "result": result,
-                },
-            )
-
-        except Exception as error:
-
-            return ExecutionResult(
-                success=False,
-                message=(
-                    f"Action '{action.name}' "
-                    f"failed: {error}"
-                ),
-            )

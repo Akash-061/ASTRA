@@ -10,97 +10,95 @@ _model = SentenceTransformer(
 
 
 ISSUE_CATEGORIES = {
-
-    "civic": (
-        "local civic problems affecting residents, "
-        "municipal problems, public complaints, "
-        "street infrastructure, garbage collection, "
-        "street maintenance, public facilities"
+    "power": (
+        "power outages, electricity failures, "
+        "blackouts, electrical supply problems"
     ),
 
-    "infrastructure": (
-        "infrastructure problems, damaged roads, "
-        "damaged buildings, broken street infrastructure, "
-        "construction problems, public infrastructure failures"
+    "civic": (
+        "civic problems, damaged public infrastructure, "
+        "municipal service problems, sanitation, "
+        "water supply, garbage, street maintenance"
     ),
 
     "traffic": (
-        "traffic congestion, road accidents, "
-        "transportation problems, parking problems, "
-        "traffic disruption, road safety"
-    ),
-
-    "power": (
-        "electricity problems, power outages, "
-        "power cuts, electrical failures, "
-        "electricity supply disruptions"
-    ),
-
-    "water": (
-        "water supply problems, water shortages, "
-        "drinking water problems, contaminated water, "
-        "water distribution failures"
-    ),
-
-    "drainage": (
-        "stormwater drainage problems, flooding, "
-        "blocked drains, sewage problems, "
-        "waterlogging, drainage infrastructure"
-    ),
-
-    "pollution": (
-        "air pollution, water pollution, "
-        "chemical pollution, environmental contamination, "
-        "bad smells, toxic emissions"
+        "traffic congestion, road problems, "
+        "parking shortages, transportation disruptions, "
+        "commuting problems"
     ),
 
     "crime": (
-        "crime, theft, robbery, assault, "
-        "fraud, criminal activity, arrests"
+        "crime, criminal activity, theft, robbery, "
+        "assault, violence, shootings, arrests"
     ),
 
     "public_safety": (
-        "public safety problems, dangerous conditions, "
-        "safety concerns affecting residents, "
-        "accidents and hazards"
+        "public safety problems, accidents, hazards, "
+        "dangerous conditions, emergencies"
+    ),
+
+    "health": (
+        "public health problems, disease outbreaks, "
+        "hospital problems, healthcare problems, "
+        "medical emergencies affecting communities"
     ),
 
     "environment": (
-        "environmental problems, environmental damage, "
-        "ecological concerns, waste, pollution, "
-        "damage to natural resources"
+        "environmental problems, pollution, flooding, "
+        "wildfires, extreme weather, ecological damage"
     ),
 
-    "protest": (
-        "public protests, demonstrations, strikes, "
-        "residents protesting, public demands, "
-        "community opposition"
+    "housing": (
+        "housing problems, homelessness, rent problems, "
+        "housing shortages, unsafe housing"
     ),
 
-    "government_services": (
-        "government service failures, municipal services, "
-        "public service problems, administrative failures, "
-        "government response to local problems"
+    "education": (
+        "education problems, school closures, "
+        "school safety, problems affecting schools "
+        "or students"
     ),
 }
+
+
+def build_claim_context(
+    claim: Claim,
+) -> str:
+
+    parts = [
+        claim.source_title,
+        claim.statement,
+    ]
+
+    return " ".join(
+        part
+        for part in parts
+        if part
+    )
 
 
 def calculate_category_scores(
     claim: Claim,
 ) -> dict[str, float]:
 
-    claim_context = (
-        f"{claim.source_title} "
-        f"{claim.statement}"
+    claim_context = build_claim_context(
+        claim
     )
 
-    texts = [
-        claim_context,
-        *ISSUE_CATEGORIES.values(),
+    categories = list(
+        ISSUE_CATEGORIES.keys()
+    )
+
+    category_descriptions = [
+        ISSUE_CATEGORIES[category]
+        for category in categories
     ]
 
     embeddings = _model.encode(
-        texts
+        [
+            claim_context,
+            *category_descriptions,
+        ]
     )
 
     claim_embedding = embeddings[0]
@@ -115,7 +113,7 @@ def calculate_category_scores(
     return {
         category: float(score)
         for category, score in zip(
-            ISSUE_CATEGORIES.keys(),
+            categories,
             similarities,
         )
     }
@@ -139,7 +137,7 @@ def calculate_issue_relevance(
 
 def is_issue(
     claim: Claim,
-    threshold: float = 0.30,
+    threshold: float = 0.40,
 ) -> bool:
 
     score = calculate_issue_relevance(

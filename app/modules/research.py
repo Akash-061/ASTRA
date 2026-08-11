@@ -1,121 +1,79 @@
 from rich.console import Console
 
-from app.research.search import search_web
-from app.research.analyzer import extract_claims
-from app.research.relevance import is_relevant
-from app.research.verifier import verify_claims
+from app.core.models import Action
+from app.research.adapter import action_to_research_request
+from app.research.engine import run_research
 
 
 console = Console()
 
 
-def clean_query(command: str) -> str:
+def research(
+    action: Action,
+):
 
-    command = command.strip().lower()
-
-    prefixes = [
-        "search the web for ",
-        "search the web ",
-        "search for ",
-        "search ",
-        "research ",
-        "look up ",
-        "find out ",
-    ]
-
-    for prefix in prefixes:
-
-        if command.startswith(prefix):
-            return command[len(prefix):].strip()
-
-    return command
-
-
-def research(command: str):
-
-    console.print(
-        f"\n[cyan]🔎 Researching:[/cyan] {command}\n"
+    request = action_to_research_request(
+        action
     )
 
-    query = clean_query(command)
-
     console.print(
-        f"[dim]Search query:[/dim] {query}\n"
+        f"\n[cyan]🔎 Researching:[/cyan] "
+        f"{request.original_query}\n"
     )
 
-    # Step 1: Search
-    results = search_web(query)
+    result = run_research(
+        request
+    )
 
-    if not results:
+    if not result["success"]:
 
         console.print(
-            "[yellow]No results found.[/yellow]"
+            f"[yellow]{result['message']}[/yellow]"
         )
 
-        return
+        return result
+
+    data = result.get(
+        "data",
+        {},
+    )
 
     console.print(
-        f"[green]Found {len(results)} unique sources.[/green]\n"
+        "[green]Research completed.[/green]\n"
     )
-
-    # Step 2: Extract candidate claims
-    claims = extract_claims(results)
-
-    if not claims:
-
-        console.print(
-            "[yellow]No useful claims found.[/yellow]"
-        )
-
-        return
 
     console.print(
-        f"[dim]Candidate claims: {len(claims)}[/dim]"
+        f"[green]Search query:[/green] "
+        f"{data.get('query', '')}"
     )
-
-    # Step 3: Filter claims by semantic relevance
-    relevant_claims = []
-
-    for claim in claims:
-
-        if is_relevant(
-            query,
-            claim,
-        ):
-            relevant_claims.append(claim)
-
-    if not relevant_claims:
-
-        console.print(
-            "[yellow]No relevant claims found.[/yellow]"
-        )
-
-        return
 
     console.print(
-        f"[green]Relevant claims: "
-        f"{len(relevant_claims)}[/green]\n"
+        f"[green]Sources:[/green] "
+        f"{data.get('sources', 0)}"
     )
-
-    # Step 4: Verify and create evidence groups
-    evidence_groups = verify_claims(
-        relevant_claims
-    )
-
-    if not evidence_groups:
-
-        console.print(
-            "[yellow]No evidence groups found.[/yellow]"
-        )
-
-        return
 
     console.print(
-        "[bold cyan]Research Evidence[/bold cyan]\n"
+        f"[green]Candidate claims:[/green] "
+        f"{data.get('claims', 0)}"
     )
+
+    console.print(
+        f"[green]Relevant claims:[/green] "
+        f"{data.get('relevant_claims', 0)}"
+    )
+
+    console.print(
+        f"[green]Evidence groups:[/green] "
+        f"{len(data.get('evidence_groups', []))}"
+    )
+
+    console.print()
 
     for index, group in enumerate(
-        evidence_groups,
+        data.get(
+            "evidence_groups",
+            [],
+        ),
         start=1,
     ):
 
@@ -125,7 +83,7 @@ def research(command: str):
         )
 
         console.print(
-            f"[yellow]Evidence confidence:[/yellow] "
+            f"[yellow]Confidence:[/yellow] "
             f"{group.confidence:.0%}"
         )
 
@@ -150,3 +108,8 @@ def research(command: str):
             )
 
         console.print()
+
+    return result
+
+
+research.accepts_action = True
