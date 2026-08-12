@@ -43,7 +43,6 @@ def extract_location(
         r"\bin\s+([A-Za-z][A-Za-z .'-]*)",
         r"\bat\s+([A-Za-z][A-Za-z .'-]*)",
         r"\bfrom\s+([A-Za-z][A-Za-z .'-]*)",
-        r"\babout\s+([A-Za-z][A-Za-z .'-]*)",
     ]
 
     for pattern in patterns:

@@ -1,3 +1,4 @@
+from app.core.context_resolver import resolve_context
 from app.core.models import (
     Action,
     TaskPlan,
@@ -13,8 +14,12 @@ def create_plan(
 ) -> TaskPlan:
 
     action = understand_command(
-        command,
-        previous_action=previous_action,
+        command
+    )
+
+    action = resolve_context(
+        action,
+        previous_action,
     )
 
     return TaskPlan(

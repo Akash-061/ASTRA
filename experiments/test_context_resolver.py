@@ -27,16 +27,6 @@ resolved = resolve_context(
 )
 
 
-print()
-print(
-    "Resolved action:"
-)
-
-print(
-    resolved.parameters
-)
-
-
 assert resolved.name == "research"
 
 assert (
@@ -57,5 +47,8 @@ assert (
 
 print()
 print(
-    "CONTEXT RESEARCH PASSED"
+    "CONTEXT RESOLVER PASSED"
+)
+print(
+    resolved.parameters
 )

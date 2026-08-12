@@ -5,9 +5,9 @@ from app.core.models import Action
 previous_action = Action(
     name="research",
     parameters={
-        "command": "research recent issues in Chennai",
-        "topic": "issues",
-        "location": "Chennai",
+        "command": "research recent AI developments in India",
+        "topic": "AI developments",
+        "location": "India",
         "timeframe": "recent",
     },
 )
@@ -16,7 +16,7 @@ previous_action = Action(
 new_action = Action(
     name="unknown",
     parameters={
-        "command": "what about Bangalore?",
+        "command": "what about cybersecurity?",
     },
 )
 
@@ -28,25 +28,20 @@ resolved = resolve_context(
 
 
 print()
-print(
-    "Resolved action:"
-)
-
-print(
-    resolved.parameters
-)
+print("Resolved parameters:")
+print(resolved.parameters)
 
 
 assert resolved.name == "research"
 
 assert (
     resolved.parameters["topic"]
-    == "issues"
+    == "cybersecurity"
 )
 
 assert (
     resolved.parameters["location"]
-    == "Bangalore"
+    == "India"
 )
 
 assert (
@@ -56,6 +51,4 @@ assert (
 
 
 print()
-print(
-    "CONTEXT RESEARCH PASSED"
-)
+print("TOPIC CONTEXT PASSED")

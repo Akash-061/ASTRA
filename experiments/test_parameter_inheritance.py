@@ -5,18 +5,20 @@ from app.core.models import Action
 previous_action = Action(
     name="research",
     parameters={
-        "command": "research recent issues in Chennai",
-        "topic": "issues",
-        "location": "Chennai",
+        "command": "research recent AI developments in India",
+        "topic": "AI developments",
+        "location": "India",
         "timeframe": "recent",
     },
 )
 
 
+# New action only changes the location.
 new_action = Action(
     name="unknown",
     parameters={
-        "command": "what about Bangalore?",
+        "command": "what about Japan?",
+        "location": "Japan",
     },
 )
 
@@ -29,7 +31,7 @@ resolved = resolve_context(
 
 print()
 print(
-    "Resolved action:"
+    "Resolved parameters:"
 )
 
 print(
@@ -41,12 +43,12 @@ assert resolved.name == "research"
 
 assert (
     resolved.parameters["topic"]
-    == "issues"
+    == "AI developments"
 )
 
 assert (
     resolved.parameters["location"]
-    == "Bangalore"
+    == "Japan"
 )
 
 assert (
@@ -57,5 +59,5 @@ assert (
 
 print()
 print(
-    "CONTEXT RESEARCH PASSED"
+    "PARAMETER INHERITANCE PASSED"
 )
