@@ -37,13 +37,15 @@ class Orchestrator:
             request.text
         )
 
-        plan = create_plan(
-            request.text,
-            previous_action=self.context.get_last_action(),
+        previous_action = (
+            self.context.get_last_action()
         )
 
-        # Unknown requests should not become
-        # the remembered conversation action.
+        plan = create_plan(
+            request.text,
+            previous_action=previous_action,
+        )
+
         if plan.intent == "unknown":
 
             return AstraResponse(
@@ -54,17 +56,14 @@ class Orchestrator:
                 success=False,
             )
 
-        # Remember the most recently
-        # interpreted valid action.
-        if plan.actions:
-
-            self.context.set_last_action(
-                plan.actions[-1]
-            )
-
         results = []
 
         for action in plan.actions:
+
+            # Record every planned action.
+            self.context.add_action(
+                action
+            )
 
             result = self.executor.execute(
                 action
