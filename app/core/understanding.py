@@ -10,11 +10,16 @@ from app.research.parameters import (
 
 def understand_command(
     command: str,
+    previous_action: Action | None = None,
 ) -> Action:
 
     intent = detect_intent(
         command
     )
+
+    # --------------------------------------------------
+    # System commands
+    # --------------------------------------------------
 
     if intent == "system":
 
@@ -24,6 +29,7 @@ def understand_command(
             "cpu" in lowered
             or "processor" in lowered
         ):
+
             return Action(
                 name="system",
                 parameters={
@@ -35,6 +41,7 @@ def understand_command(
             "ram" in lowered
             or "memory" in lowered
         ):
+
             return Action(
                 name="system",
                 parameters={
@@ -46,12 +53,17 @@ def understand_command(
             "time" in lowered
             or "what time" in lowered
         ):
+
             return Action(
                 name="system",
                 parameters={
                     "command": "time",
                 },
             )
+
+    # --------------------------------------------------
+    # Open commands
+    # --------------------------------------------------
 
     if intent == "open":
 
@@ -79,6 +91,10 @@ def understand_command(
                         "application": application,
                     },
                 )
+
+    # --------------------------------------------------
+    # Research commands
+    # --------------------------------------------------
 
     if intent == "research":
 
@@ -116,6 +132,58 @@ def understand_command(
             parameters=parameters,
         )
 
+    # --------------------------------------------------
+    # Context-aware research follow-ups
+    # --------------------------------------------------
+
+    if (
+        intent == "unknown"
+        and previous_action is not None
+        and previous_action.name == "research"
+    ):
+
+        previous_parameters = (
+            previous_action.parameters
+        )
+
+        location = extract_location(
+            command
+        )
+
+        # A follow-up research request needs
+        # a new location to replace the old one.
+        if location:
+
+            parameters = {
+                "command": command,
+                "topic": previous_parameters.get(
+                    "topic",
+                    "",
+                ),
+                "location": location,
+            }
+
+            previous_timeframe = (
+                previous_parameters.get(
+                    "timeframe"
+                )
+            )
+
+            if previous_timeframe:
+
+                parameters["timeframe"] = (
+                    previous_timeframe
+                )
+
+            return Action(
+                name="research",
+                parameters=parameters,
+            )
+
+    # --------------------------------------------------
+    # Help
+    # --------------------------------------------------
+
     if intent == "help":
 
         return Action(
@@ -123,12 +191,20 @@ def understand_command(
             parameters={},
         )
 
+    # --------------------------------------------------
+    # Exit
+    # --------------------------------------------------
+
     if intent == "exit":
 
         return Action(
             name="exit",
             parameters={},
         )
+
+    # --------------------------------------------------
+    # Unknown
+    # --------------------------------------------------
 
     return Action(
         name="unknown",
