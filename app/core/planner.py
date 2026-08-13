@@ -1,3 +1,5 @@
+import re
+
 from app.core.context_resolver import resolve_context
 from app.core.models import (
     Action,
@@ -12,31 +14,88 @@ def _split_open_commands(
     command: str,
 ) -> list[str] | None:
 
-    parts = command.split(
-        " and open "
+    lowered = command.lower().strip()
+
+    # Multi-action open commands must
+    # begin with "open".
+    if not lowered.startswith(
+        "open "
+    ):
+        return None
+
+    # Remove the first "open".
+    applications_text = command[
+        len("open "):
+    ].strip()
+
+    # Normalize:
+    #
+    # open Chrome then open Notepad
+    #
+    # into:
+    #
+    # Chrome and Notepad
+    applications_text = re.sub(
+        r"\bthen\s+open\b",
+        "and",
+        applications_text,
+        flags=re.IGNORECASE,
     )
 
+    # Normalize:
+    #
+    # Chrome and open Notepad
+    #
+    # into:
+    #
+    # Chrome and Notepad
+    applications_text = re.sub(
+        r"\band\s+open\b",
+        "and",
+        applications_text,
+        flags=re.IGNORECASE,
+    )
+
+    # Normalize commas:
+    #
+    # Chrome, Notepad and Calculator
+    #
+    # into:
+    #
+    # Chrome and Notepad and Calculator
+    applications_text = re.sub(
+        r"\s*,\s*",
+        " and ",
+        applications_text,
+    )
+
+    # Split application names.
+    parts = re.split(
+        r"\s+and\s+",
+        applications_text,
+        flags=re.IGNORECASE,
+    )
+
+    # A multi-action command needs at
+    # least two applications.
     if len(parts) < 2:
         return None
 
     commands = []
 
-    for index, part in enumerate(parts):
+    for part in parts:
 
-        part = part.strip()
+        application = part.strip()
 
-        if index > 0:
-            part = (
-                "open "
-                + part
-            )
-
-        if not part.lower().startswith(
-            "open "
-        ):
+        # Reject malformed commands such as:
+        #
+        # open Chrome and
+        if not application:
             return None
 
-        commands.append(part)
+        commands.append(
+            f"open {application}"
+        )
 
     return commands
 
@@ -64,13 +123,19 @@ def create_plan(
                 single_command
             )
 
+            # Safety check:
+            # every split command must still
+            # be understood as an open action.
             if action.name != "open":
+
                 return TaskPlan(
                     intent=action.name,
                     actions=[action],
                 )
 
-            actions.append(action)
+            actions.append(
+                action
+            )
 
         return TaskPlan(
             intent="multi_action",
