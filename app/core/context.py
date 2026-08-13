@@ -64,6 +64,21 @@ class ConversationContext:
             self.action_history
         )
 
+    def get_last_action_by_name(
+        self,
+        name: str,
+    ) -> Action | None:
+
+        for action in reversed(
+            self.action_history
+        ):
+
+            if action.name == name:
+
+                return action
+
+        return None
+
     def clear(self) -> None:
 
         self.history.clear()

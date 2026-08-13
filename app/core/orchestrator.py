@@ -37,8 +37,13 @@ class Orchestrator:
             request.text
         )
 
+        # Find the most recent relevant
+        # research action rather than blindly
+        # using the immediately previous action.
         previous_action = (
-            self.context.get_last_action()
+            self.context.get_last_action_by_name(
+                "research"
+            )
         )
 
         plan = create_plan(
