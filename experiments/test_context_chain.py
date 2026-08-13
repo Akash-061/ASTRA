@@ -1,8 +1,37 @@
-from app.core.models import UserRequest
+from app.core.models import (
+    ExecutionResult,
+    UserRequest,
+)
 from app.core.orchestrator import Orchestrator
 
 
-orchestrator = Orchestrator()
+class FakeExecutor:
+
+    def __init__(self):
+        self.actions = []
+
+    def execute(
+        self,
+        action,
+    ) -> ExecutionResult:
+
+        self.actions.append(
+            action
+        )
+
+        return ExecutionResult(
+            success=True,
+            message=(
+                f"Executed {action.name}"
+            ),
+        )
+
+
+executor = FakeExecutor()
+
+orchestrator = Orchestrator(
+    executor=executor
+)
 
 
 # --------------------------------------------------
@@ -114,6 +143,28 @@ assert (
 
 
 # --------------------------------------------------
+# Verify executor action order
+# --------------------------------------------------
+
+assert len(executor.actions) == 3
+
+assert (
+    executor.actions[0].parameters["location"]
+    == "Chennai"
+)
+
+assert (
+    executor.actions[1].parameters["location"]
+    == "Bangalore"
+)
+
+assert (
+    executor.actions[2].parameters["location"]
+    == "Mumbai"
+)
+
+
+# --------------------------------------------------
 # Verify action history
 # --------------------------------------------------
 
@@ -137,7 +188,6 @@ assert (
     history[2].parameters["location"]
     == "Mumbai"
 )
-
 
 assert (
     orchestrator.context.get_last_action()

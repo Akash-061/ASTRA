@@ -6,29 +6,35 @@ from app.research.parameters import (
 )
 
 
+AMBIGUOUS_REFERENCES = {
+    "it",
+    "that",
+    "this",
+    "the same",
+    "the other one",
+    "the other",
+}
+
+
 KNOWN_LOCATIONS = {
-    "india",
-    "japan",
-    "tokyo",
-    "chennai",
     "bangalore",
     "bengaluru",
-    "delhi",
+    "chennai",
     "mumbai",
-    "hyderabad",
+    "delhi",
+    "new delhi",
     "kolkata",
-    "kerala",
-    "tamil nadu",
+    "hyderabad",
+    "pune",
+    "coimbatore",
+    "madurai",
+    "india",
+    "japan",
+    "china",
     "usa",
     "united states",
     "uk",
     "united kingdom",
-    "china",
-    "singapore",
-    "australia",
-    "canada",
-    "germany",
-    "france",
 }
 
 
@@ -61,17 +67,31 @@ def _extract_followup_value(
     return None
 
 
-def _is_known_location(
-    value: str | None,
+def _is_ambiguous_followup(
+    command: str,
 ) -> bool:
 
-    if not value:
+    value = _extract_followup_value(
+        command
+    )
+
+    if value is None:
         return False
 
+    normalized = value.lower().strip()
+
     return (
-        value.lower().strip()
-        in KNOWN_LOCATIONS
+        normalized in AMBIGUOUS_REFERENCES
     )
+
+
+def _is_known_location(
+    value: str,
+) -> bool:
+
+    normalized = value.lower().strip()
+
+    return normalized in KNOWN_LOCATIONS
 
 
 def resolve_context(
@@ -79,8 +99,17 @@ def resolve_context(
     previous_action: Action | None = None,
 ) -> Action:
 
+    # --------------------------------------------------
+    # No previous context
+    # --------------------------------------------------
+
     if previous_action is None:
         return new_action
+
+    # --------------------------------------------------
+    # Context currently applies only to
+    # research follow-up commands
+    # --------------------------------------------------
 
     if previous_action.name != "research":
         return new_action
@@ -88,26 +117,35 @@ def resolve_context(
     if new_action.name != "unknown":
         return new_action
 
-    previous_parameters = (
-        previous_action.parameters
-    )
-
     command = new_action.parameters.get(
         "command",
         "",
     )
 
     # --------------------------------------------------
-    # Extract explicit timeframe
+    # Safety: reject ambiguous references
+    # --------------------------------------------------
+
+    if _is_ambiguous_followup(
+        command
+    ):
+        return new_action
+
+    previous_parameters = (
+        previous_action.parameters
+    )
+
+    # --------------------------------------------------
+    # Extract explicit parameters
     # --------------------------------------------------
 
     timeframe = extract_timeframe(
         command
     )
 
-    # --------------------------------------------------
-    # Extract "what about X?"
-    # --------------------------------------------------
+    location = extract_location(
+        command
+    )
 
     followup_value = (
         _extract_followup_value(
@@ -115,8 +153,16 @@ def resolve_context(
         )
     )
 
-    location = None
     followup_topic = None
+
+    # --------------------------------------------------
+    # Handle "what about X?"
+    #
+    # If X is a known location, replace
+    # the previous location.
+    #
+    # Otherwise, treat X as a new topic.
+    # --------------------------------------------------
 
     if followup_value:
 
@@ -128,19 +174,9 @@ def resolve_context(
 
         else:
 
-            followup_topic = followup_value
-
-    else:
-
-        # Handle explicit location phrases such as:
-        #
-        # "in Bangalore"
-        # "from Japan"
-        # "at Tokyo"
-
-        location = extract_location(
-            command
-        )
+            followup_topic = (
+                followup_value
+            )
 
     # --------------------------------------------------
     # Previous parameters
@@ -187,7 +223,7 @@ def resolve_context(
     )
 
     # --------------------------------------------------
-    # Nothing to resolve
+    # Nothing new was provided
     # --------------------------------------------------
 
     if (
@@ -196,6 +232,10 @@ def resolve_context(
         and timeframe is None
     ):
         return new_action
+
+    # --------------------------------------------------
+    # Build resolved action
+    # --------------------------------------------------
 
     parameters = {
         "command": command,
