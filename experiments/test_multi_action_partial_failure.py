@@ -1,92 +1,41 @@
-from app.core.models import (
-    ExecutionResult,
-    UserRequest,
-)
+from app.core.models import UserRequest
 from app.core.orchestrator import Orchestrator
 
 
-class FakeExecutor:
-
-    def __init__(self):
-        self.actions = []
-
-    def execute(
-        self,
-        action,
-    ) -> ExecutionResult:
-
-        self.actions.append(
-            action
-        )
-
-        application = (
-            action.parameters.get(
-                "application",
-                "",
-            ).lower()
-        )
-
-        if application == "unknownapp":
-
-            return ExecutionResult(
-                success=False,
-                message="Application not found.",
-            )
-
-        return ExecutionResult(
-            success=True,
-            message=(
-                f"Opened {application}"
-            ),
-        )
-
-
-executor = FakeExecutor()
-
-orchestrator = Orchestrator(
-    executor=executor
-)
+orchestrator = Orchestrator()
 
 
 response = orchestrator.handle(
     UserRequest(
-        text=(
-            "open Chrome and "
-            "open UnknownApp"
-        )
+        text="open UnknownApp and tell me the time"
     )
 )
 
 
-# Overall request must fail because
-# one action failed.
+print()
+print("Response success:", response.success)
+print("Response message:", response.message)
+print("Response data:", response.data)
+
+
+# The overall request should report failure
+# because one action failed.
 assert response.success is False
 
 
-# Both actions should have been attempted.
-assert len(executor.actions) == 2
+# But both actions should have been attempted.
+results = response.data["results"]
+
+assert len(results) == 2
 
 
-assert (
-    executor.actions[0].parameters[
-        "application"
-    ].lower()
-    == "chrome"
-)
+# First action should fail.
+assert results[0]["success"] is False
 
-assert (
-    executor.actions[1].parameters[
-        "application"
-    ].lower()
-    == "unknownapp"
-)
+
+# Second action should still succeed.
+assert results[1]["success"] is True
 
 
 print()
 print("MULTI-ACTION PARTIAL FAILURE PASSED")
-print()
-
-print(
-    "Response:",
-    response.message,
-)
