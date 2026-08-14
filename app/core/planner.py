@@ -10,14 +10,47 @@ from app.core.understanding import (
 )
 
 
+# Applications currently supported by ASTRA's
+# natural multi-open command handling.
+KNOWN_APPLICATIONS = {
+    "chrome",
+    "google chrome",
+    "notepad",
+    "calculator",
+}
+
+
+def _normalize_application(
+    application: str,
+) -> str:
+
+    return (
+        application.lower()
+        .strip()
+    )
+
+
+def _is_known_application(
+    application: str,
+) -> bool:
+
+    normalized = _normalize_application(
+        application
+    )
+
+    return (
+        normalized in KNOWN_APPLICATIONS
+    )
+
+
 def _split_open_commands(
     command: str,
 ) -> list[str] | None:
 
     lowered = command.lower().strip()
 
-    # Multi-action open commands must
-    # begin with "open".
+    # Only commands beginning with "open"
+    # can use the multi-open splitter.
     if not lowered.startswith(
         "open "
     ):
@@ -30,7 +63,7 @@ def _split_open_commands(
 
     # Normalize:
     #
-    # open Chrome then open Notepad
+    # Chrome then open Notepad
     #
     # into:
     #
@@ -76,8 +109,7 @@ def _split_open_commands(
         flags=re.IGNORECASE,
     )
 
-    # A multi-action command needs at
-    # least two applications.
+    # Must contain at least two applications.
     if len(parts) < 2:
         return None
 
@@ -87,10 +119,26 @@ def _split_open_commands(
 
         application = part.strip()
 
-        # Reject malformed commands such as:
-        #
-        # open Chrome and
+        # Reject malformed commands.
         if not application:
+            return None
+
+        # IMPORTANT:
+        #
+        # Only known application names can be
+        # converted into additional open actions.
+        #
+        # This prevents:
+        #
+        # open Chrome and tell me the time
+        #
+        # from becoming:
+        #
+        # open Chrome
+        # open tell me the time
+        if not _is_known_application(
+            application
+        ):
             return None
 
         commands.append(
@@ -100,14 +148,67 @@ def _split_open_commands(
     return commands
 
 
+def _split_mixed_commands(
+    command: str,
+) -> list[str] | None:
+
+    # Split once:
+    #
+    # open Chrome and tell me the time
+    #
+    # becomes:
+    #
+    # open Chrome
+    # tell me the time
+    parts = re.split(
+        r"\s+and\s+",
+        command,
+        maxsplit=1,
+        flags=re.IGNORECASE,
+    )
+
+    if len(parts) != 2:
+        return None
+
+    first_command = parts[0].strip()
+    second_command = parts[1].strip()
+
+    if (
+        not first_command
+        or not second_command
+    ):
+        return None
+
+    # Understand both sides independently.
+    first_action = understand_command(
+        first_command
+    )
+
+    second_action = understand_command(
+        second_command
+    )
+
+    # Both sides must be valid actions.
+    if (
+        first_action.name == "unknown"
+        or second_action.name == "unknown"
+    ):
+        return None
+
+    return [
+        first_command,
+        second_command,
+    ]
+
+
 def create_plan(
     command: str,
     previous_action: Action | None = None,
 ) -> TaskPlan:
 
-    # --------------------------------------------------
-    # Multi-action open commands
-    # --------------------------------------------------
+    # ==================================================
+    # 1. Multi-open commands
+    # ==================================================
 
     commands = _split_open_commands(
         command
@@ -123,15 +224,37 @@ def create_plan(
                 single_command
             )
 
-            # Safety check:
-            # every split command must still
-            # be understood as an open action.
-            if action.name != "open":
+            actions.append(
+                action
+            )
 
-                return TaskPlan(
-                    intent=action.name,
-                    actions=[action],
-                )
+        return TaskPlan(
+            intent="multi_action",
+            actions=actions,
+        )
+
+    # ==================================================
+    # 2. Mixed multi-action commands
+    # ==================================================
+
+    commands = _split_mixed_commands(
+        command
+    )
+
+    if commands:
+
+        actions = []
+
+        for single_command in commands:
+
+            action = understand_command(
+                single_command
+            )
+
+            action = resolve_context(
+                action,
+                previous_action,
+            )
 
             actions.append(
                 action
@@ -142,9 +265,9 @@ def create_plan(
             actions=actions,
         )
 
-    # --------------------------------------------------
-    # Single-action command
-    # --------------------------------------------------
+    # ==================================================
+    # 3. Single action
+    # ==================================================
 
     action = understand_command(
         command
