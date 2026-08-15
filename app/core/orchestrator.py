@@ -83,30 +83,51 @@ class Orchestrator:
                 success=False,
             )
 
-        # If any action fails, preserve every
-        # execution result in the response.
-        for result in results:
+        # --------------------------------------------------
+        # Build combined multi-action response
+        # --------------------------------------------------
 
-            if not result.success:
+        result_messages = [
+            result.message
+            for result in results
+        ]
 
-                response = build_response(
-                    result
-                )
-
-                response.data["results"] = [
-                    item.model_dump()
-                    for item in results
-                ]
-
-                return response
-
-        # The last successful result remains
-        # the primary user-facing response.
-        response = build_response(
-            results[-1]
+        all_successful = all(
+            result.success
+            for result in results
         )
 
-        # Preserve all execution results.
+        any_successful = any(
+            result.success
+            for result in results
+        )
+
+        # All actions succeeded.
+        if all_successful:
+
+            response = build_response(
+                results[-1]
+            )
+
+        # Some actions succeeded and some failed.
+        elif any_successful:
+
+            response = AstraResponse(
+                message=" ".join(
+                    result_messages
+                ),
+                success=False,
+                data={},
+            )
+
+        # All actions failed.
+        else:
+
+            response = build_response(
+                results[0]
+            )
+
+        # Preserve every execution result.
         response.data["results"] = [
             item.model_dump()
             for item in results
